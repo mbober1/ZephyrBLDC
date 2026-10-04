@@ -1,0 +1,20 @@
+config COMMANDER
+	bool "Commander library"
+	default n
+	select COMM_ROUTER
+	help
+	  Enable the commander thread and library.
+
+if COMMANDER
+
+config COMMANDER_THREAD_PRIORITY
+	int "Commander thread priority"
+	default 5
+	help
+	  Priority used for the commander thread
+
+config COMMANDER_THREAD_STACK_SIZE
+	int "Telemetry thread stack size"
+	default 1024
+
+endif

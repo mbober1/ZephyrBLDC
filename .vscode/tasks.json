@@ -58,6 +58,18 @@
 				"build",
 				"-t", "menuconfig"
 			],
+		},
+		{
+			"label": "Twister",
+			"type": "shell",
+			"group": "build",
+			"command": "west",
+			"args": [
+				"twister",
+				"-T", "tests",
+				"-p", "native_sim",
+				"-v"
+			],
 		}
 	]
 }

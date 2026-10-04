@@ -1,0 +1,20 @@
+config TELEMETRY
+	bool "Telemetry library"
+	default n
+	select COMM_ROUTER
+	help
+	  Enable the telemetry thread and library.
+
+if TELEMETRY
+
+config TELEMETRY_THREAD_PRIORITY
+	int "Telemetry thread priority"
+	default 5
+	help
+	  Priority used for the telemetry thread
+
+config TELEMETRY_THREAD_STACK_SIZE
+	int "Telemetry thread stack size"
+	default 1024
+
+endif
