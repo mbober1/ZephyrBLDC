@@ -1,9 +1,6 @@
 #ifndef COMM_ROUTER_H
 #define COMM_ROUTER_H
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include <zephyr/kernel.h>
 #include <zephyr/sys/iterable_sections.h>
 
@@ -88,7 +85,6 @@ struct comm_router_customer {
  * @retval 0 Input accepted.
  * @retval -EINVAL Payload pointer is null for nonzero length.
  * @retval -EINVAL Interface is null.
- * @retval -ENOENT Interface is not declared.
  * @retval -EMSGSIZE Payload exceeds the configured maximum.
  */
 int comm_router_receive(struct comm_router_interface *interface, uint16_t message_id,

@@ -1,5 +1,4 @@
 #include <errno.h>
-#include <string.h>
 
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
@@ -15,24 +14,27 @@ enum frame_offset {
 
 int beaver_protocol_frame_length(const uint8_t *data, size_t available, size_t *frame_length)
 {
+	int result = 0;
+
 	if (data == NULL || frame_length == NULL) {
-		return -EINVAL;
+		result = -EINVAL;
 	}
-	if (available < BEAVER_PROTOCOL_HEADER_SIZE) {
-		return -EAGAIN;
+	else if (available < BEAVER_PROTOCOL_HEADER_SIZE) {
+		result = -EAGAIN;
 	}
-	if (data[START_MARKER_OFFSET] != BEAVER_PROTOCOL_START_MARKER ||
+	else if (data[START_MARKER_OFFSET] != BEAVER_PROTOCOL_START_MARKER ||
 	    data[VERSION_OFFSET] != BEAVER_PROTOCOL_VERSION) {
-		return -EBADMSG;
+		result = -EBADMSG;
 	}
+	else {
+		size_t payload_length = sys_get_le16(&data[PAYLOAD_LENGTH_OFFSET]);
+		if (payload_length > CONFIG_COMM_ROUTER_MAX_PAYLOAD) {
+			result = -EMSGSIZE;
+		}
 
-	size_t payload_length = sys_get_le16(&data[PAYLOAD_LENGTH_OFFSET]);
-	if (payload_length > CONFIG_COMM_ROUTER_MAX_PAYLOAD) {
-		return -EMSGSIZE;
+		*frame_length = BEAVER_PROTOCOL_FRAME_OVERHEAD + payload_length;
 	}
-
-	*frame_length = BEAVER_PROTOCOL_FRAME_OVERHEAD + payload_length;
-	return 0;
+	return result;
 }
 
 int beaver_protocol_decode(const uint8_t *frame, size_t frame_length,
@@ -91,10 +93,8 @@ int beaver_protocol_encode(uint16_t message_id, const uint8_t *payload, size_t p
 	if (payload_length != 0U) {
 		memcpy(&frame[BEAVER_PROTOCOL_HEADER_SIZE], payload, payload_length);
 	}
-	sys_put_le16(crc16_itu_t(
-			     0xFFFFU, &frame[VERSION_OFFSET],
-			     BEAVER_PROTOCOL_HEADER_SIZE - VERSION_OFFSET + payload_length),
-		     &frame[BEAVER_PROTOCOL_HEADER_SIZE + payload_length]);
+	uint16_t crc = crc16_itu_t(0xFFFFU, &frame[VERSION_OFFSET], BEAVER_PROTOCOL_HEADER_SIZE - VERSION_OFFSET + payload_length);
+	sys_put_le16(crc, &frame[BEAVER_PROTOCOL_HEADER_SIZE + payload_length]);
 	*frame_length = encoded_length;
 	return 0;
 }

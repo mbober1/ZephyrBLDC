@@ -1,5 +1,4 @@
 #include <errno.h>
-#include <string.h>
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/atomic.h>
@@ -28,11 +27,10 @@ struct state {
 static struct state generic_state;
 static void rx_work_handler(struct k_work *work);
 
-K_MSGQ_DEFINE(rx_queue, sizeof(struct rx_chunk),
-	      CONFIG_UART_TRANSPORT_GENERIC_RX_QUEUE_DEPTH, 4);
-K_MUTEX_DEFINE(tx_mutex);
-K_SEM_DEFINE(tx_done, 0, 1);
-K_WORK_DEFINE(rx_work, rx_work_handler);
+K_MSGQ_DEFINE(rx_queue, sizeof(struct rx_chunk), CONFIG_UART_TRANSPORT_GENERIC_RX_QUEUE_DEPTH, 4);
+static K_MUTEX_DEFINE(tx_mutex);
+static K_SEM_DEFINE(tx_done, 0, 1);
+static K_WORK_DEFINE(rx_work, rx_work_handler);
 
 static void rx_work_handler(struct k_work *work)
 {

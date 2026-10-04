@@ -1,5 +1,4 @@
 #include <errno.h>
-#include <string.h>
 
 #include <zephyr/ztest.h>
 
@@ -21,6 +20,8 @@ static unsigned int received_count;
 static uint16_t received_message_id;
 static uint8_t received_payload[16];
 static size_t received_payload_length;
+static bool fail_writes;
+static unsigned int failing_write_calls;
 static uint8_t uart_transmitted[CONFIG_COMM_ROUTER_MAX_PAYLOAD +
 				BEAVER_PROTOCOL_FRAME_OVERHEAD];
 static size_t uart_transmitted_length;
@@ -59,6 +60,22 @@ static int selected_test_write(void *context, uint16_t message_id, const uint8_t
 		memcpy(selected_transmitted, payload, payload_length);
 	}
 	return 0;
+}
+
+static int failing_test_write(void *context, uint16_t message_id, const uint8_t *payload,
+			      size_t payload_length)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(message_id);
+	ARG_UNUSED(payload);
+	ARG_UNUSED(payload_length);
+
+	if (!fail_writes) {
+		return 0;
+	}
+
+	failing_write_calls++;
+	return failing_write_calls == 1U ? -EIO : -ENOMEM;
 }
 
 static void test_receive(void *context, uint16_t message_id, const uint8_t *payload,
@@ -106,6 +123,8 @@ UART_TRANSPORT_DEFINE(test_uart_transport, &fake_uart_backend, NULL);
 
 COMM_ROUTER_INTERFACE_DEFINE(test_interface, test_write, NULL);
 COMM_ROUTER_INTERFACE_DEFINE(test_selected_interface, selected_test_write, NULL);
+COMM_ROUTER_INTERFACE_DEFINE(test_failing_interface_one, failing_test_write, NULL);
+COMM_ROUTER_INTERFACE_DEFINE(test_failing_interface_two, failing_test_write, NULL);
 COMM_ROUTER_CUSTOMER_DEFINE(test_duplicate_customer, TEST_DUPLICATE_MESSAGE_ID, test_receive,
 			    NULL);
 COMM_ROUTER_CUSTOMER_DEFINE(test_round_trip_customer, TEST_ROUND_TRIP_MESSAGE_ID, test_receive,
@@ -124,6 +143,8 @@ static void reset_test_state(void *fixture)
 	received_count = 0U;
 	received_message_id = 0U;
 	received_payload_length = 0U;
+	fail_writes = false;
+	failing_write_calls = 0U;
 	uart_transmitted_length = 0U;
 	uart_receive = NULL;
 	uart_receive_context = NULL;
@@ -150,11 +171,19 @@ ZTEST(comm_router, test_router_broadcasts_logical_messages)
 		      sizeof(payload) + BEAVER_PROTOCOL_FRAME_OVERHEAD);
 }
 
+ZTEST(comm_router, test_router_returns_first_write_error_after_broadcast)
+{
+	const uint8_t payload[] = {0x10U};
+
+	fail_writes = true;
+	zassert_equal(comm_router_send(TEST_ROUND_TRIP_MESSAGE_ID, payload, sizeof(payload)), -EIO);
+	zassert_equal(failing_write_calls, 2U);
+}
+
 ZTEST(comm_router, test_router_dispatches_logical_messages)
 {
 	const uint8_t payload[] = {0x44U, 0x55U};
 	uint8_t oversized_payload[CONFIG_COMM_ROUTER_MAX_PAYLOAD + 1U];
-	struct comm_router_interface unregistered_interface = {0};
 
 	zassert_equal(comm_router_receive(&test_interface, TEST_STREAM_MESSAGE_ID, payload,
 					  sizeof(payload)),
@@ -168,9 +197,6 @@ ZTEST(comm_router, test_router_dispatches_logical_messages)
 	zassert_equal(comm_router_receive(&test_interface, TEST_STREAM_MESSAGE_ID, oversized_payload,
 					  sizeof(oversized_payload)),
 		      -EMSGSIZE);
-	zassert_equal(comm_router_receive(&unregistered_interface, TEST_STREAM_MESSAGE_ID, payload,
-					  sizeof(payload)),
-		      -ENOENT);
 }
 
 ZTEST(comm_router, test_uart_transport_encodes_and_decodes_messages)

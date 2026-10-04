@@ -26,27 +26,19 @@ BUILD_ASSERT(sizeof(struct telemetry_payload) == 3U * sizeof(int16_t));
 void telemetry_loop(void)
 {
 	LOG_INF("Starting telemetry");
-	int16_t temperature = 21;
-	int16_t power = 100;
-	int16_t energy = 50;
 	int64_t next_send_time_ms = k_uptime_get() + TELEMETRY_PERIOD_MS;
+
+	const struct telemetry_payload values = {
+		.temperature = 21,
+		.power = 100,
+		.energy = 50,
+	};
 
 	while (true) {
 		k_sleep(K_TIMEOUT_ABS_MS(next_send_time_ms));
 		next_send_time_ms += TELEMETRY_PERIOD_MS;
-
-		const struct telemetry_payload values = {
-			.temperature = temperature,
-			.power = power,
-			.energy = energy,
-		};
-		uint8_t payload[sizeof(values)];
-
-		sys_put_le16((uint16_t)values.temperature, &payload[0]);
-		sys_put_le16((uint16_t)values.power, &payload[sizeof(int16_t)]);
-		sys_put_le16((uint16_t)values.energy, &payload[2U * sizeof(int16_t)]);
-
-		int result = comm_router_send(TELEMETRY_MESSAGE_ID, payload, sizeof(payload));
+		
+		int result = comm_router_send(TELEMETRY_MESSAGE_ID, (const uint8_t *)&values, sizeof(values));
 		if (result != 0) {
 			LOG_WRN("Failed to send telemetry: %d", result);
 		}
