@@ -1,0 +1,5 @@
+mainmenu "Communication router tests"
+
+source "Kconfig.zephyr"
+rsource "../app/lib/comm_router/Kconfig"
+rsource "../app/lib/uart_transport/Kconfig"
