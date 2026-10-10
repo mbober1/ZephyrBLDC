@@ -8,7 +8,7 @@ ZTEST_SUITE(commander, NULL, NULL, reset_test_state, NULL, NULL);
 ZTEST(commander, test_commander_accepts_command_and_acknowledges)
 {
 	const uint8_t payload[COMMANDER_COMMAND_PAYLOAD_SIZE] = {
-		COMMANDER_MODE_SPEED, 0x33U, 0x33U, 0x33U, 0xF3U, 0x00U, 0x80U,
+		COMMANDER_MODE_SPEED, 0x00U, 0x00U, 0xF0U, 0xC2U, 0x00U, 0x80U,
 	};
 	struct commander_command command;
 
@@ -21,7 +21,7 @@ ZTEST(commander, test_commander_accepts_command_and_acknowledges)
 	zassert_equal(commander_ack_status, COMMANDER_ACK_ACCEPTED);
 	zassert_true(commander_get(&command));
 	zassert_equal(command.mode, COMMANDER_MODE_SPEED);
-	zassert_equal(command.setpoint, (int32_t)0xF3333333);
+	zassert_equal(command.setpoint, -120.0f);
 	zassert_equal(command.current, INT16_MIN);
 }
 

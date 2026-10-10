@@ -16,7 +16,7 @@ struct commander_event {
 enum commander_payload_offset {
 	PAYLOAD_MODE_OFFSET = 0U,
 	PAYLOAD_SETPOINT_OFFSET = PAYLOAD_MODE_OFFSET + sizeof(uint8_t),
-	PAYLOAD_CURRENT_OFFSET = PAYLOAD_SETPOINT_OFFSET + sizeof(int32_t),
+	PAYLOAD_CURRENT_OFFSET = PAYLOAD_SETPOINT_OFFSET + sizeof(float),
 };
 
 
@@ -43,7 +43,13 @@ static enum commander_ack_status decode_command(const uint8_t *payload, size_t p
 	}
 
 	command->mode = (enum commander_mode)payload[PAYLOAD_MODE_OFFSET];
-	command->setpoint = (int32_t)sys_get_le32(&payload[PAYLOAD_SETPOINT_OFFSET]);
+	union {
+		uint32_t bits;
+		float value;
+	} setpoint = {
+		.bits = sys_get_le32(&payload[PAYLOAD_SETPOINT_OFFSET]),
+	};
+	command->setpoint = setpoint.value;
 	command->current = sys_get_le16(&payload[PAYLOAD_CURRENT_OFFSET]);
 
 	return COMMANDER_ACK_ACCEPTED;

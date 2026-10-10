@@ -13,11 +13,6 @@ UART_TRANSPORT_DEFINE(comm_uart_transport, &uart_transport_backend_api, DEVICE_D
 K_THREAD_DEFINE(telemetry_thread, CONFIG_TELEMETRY_THREAD_STACK_SIZE, telemetry_loop, NULL, NULL, NULL, CONFIG_TELEMETRY_THREAD_PRIORITY, 0, 0);
 #endif
 
-#if defined(CONFIG_COMMANDER)
-#include <commander.h>
-K_THREAD_DEFINE(commander_thread, CONFIG_COMMANDER_THREAD_STACK_SIZE, commander_loop, NULL, NULL, NULL, CONFIG_COMMANDER_THREAD_PRIORITY, 0, 0);
-#endif
-
 int main(void)
 {
 #if defined(CONFIG_UART_TRANSPORT)

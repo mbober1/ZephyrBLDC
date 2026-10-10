@@ -27,7 +27,7 @@ enum commander_ack_status {
 
 struct commander_command {
 	enum commander_mode mode;
-	int32_t setpoint; /* Q31 mechanical revolutions per second. */
+	float setpoint; /* Mechanical speed in RPM. */
 	int16_t current;
 };
 
