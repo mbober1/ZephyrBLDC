@@ -1,0 +1,16 @@
+config COMM_ROUTER
+	bool "Communication router library"
+	default n
+	help
+	  Enable the transport-neutral communication message router.
+
+if COMM_ROUTER
+
+config COMM_ROUTER_MAX_PAYLOAD
+	int "Maximum communication router payload size"
+	range 1 1024
+	default 64
+	help
+	  Maximum payload size accepted by the communication router.
+
+endif

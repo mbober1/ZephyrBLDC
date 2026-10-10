@@ -1,0 +1,6 @@
+tests:
+  comm_router.core:
+    platform_allow:
+      - native_sim
+    tags:
+      - comm_router
