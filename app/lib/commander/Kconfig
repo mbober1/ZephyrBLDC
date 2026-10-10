@@ -3,18 +3,15 @@ config COMMANDER
 	default n
 	select COMM_ROUTER
 	help
-	  Enable the commander thread and library.
+	  Enable the commander library.
 
 if COMMANDER
 
-config COMMANDER_THREAD_PRIORITY
-	int "Commander thread priority"
-	default 5
+config COMMANDER_EVENT_QUEUE_SIZE
+	int "Commander event queue size"
+	range 1 10
+	default 3
 	help
-	  Priority used for the commander thread
-
-config COMMANDER_THREAD_STACK_SIZE
-	int "Telemetry thread stack size"
-	default 1024
+	  Maximum number of pending command and acknowledgement events.
 
 endif

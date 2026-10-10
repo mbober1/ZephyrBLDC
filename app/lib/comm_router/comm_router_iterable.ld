@@ -1,4 +1,4 @@
 #include <zephyr/linker/iterable_sections.h>
 
-ITERABLE_SECTION_RAM(comm_router_interface, Z_LINK_ITERABLE_SUBALIGN)
+ITERABLE_SECTION_ROM(comm_router_interface, Z_LINK_ITERABLE_SUBALIGN)
 ITERABLE_SECTION_ROM(comm_router_customer, Z_LINK_ITERABLE_SUBALIGN)
