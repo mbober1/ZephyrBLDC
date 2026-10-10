@@ -6,3 +6,23 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(bldc_app)
 
 target_sources(app PRIVATE src/main.c)
+
+if(CONFIG_COMMANDER)
+	add_subdirectory(lib/commander)
+	target_link_libraries(app PRIVATE commander)
+endif()
+
+if(CONFIG_COMM_ROUTER)
+	add_subdirectory(lib/comm_router)
+	target_link_libraries(app PRIVATE comm_router)
+endif()
+
+if(CONFIG_UART_TRANSPORT)
+	add_subdirectory(lib/uart_transport)
+	target_link_libraries(app PRIVATE uart_transport)
+endif()
+
+if(CONFIG_TELEMETRY)
+	add_subdirectory(lib/telemetry)
+	target_link_libraries(app PRIVATE telemetry)
+endif()

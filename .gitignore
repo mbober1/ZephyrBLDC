@@ -2,3 +2,4 @@ build
 .west
 modules
 zephyr
+twister-out*

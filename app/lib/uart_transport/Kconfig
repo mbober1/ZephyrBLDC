@@ -1,0 +1,73 @@
+config UART_TRANSPORT
+	bool "UART transport adapter"
+	select COMM_ROUTER
+	select CRC
+	select SERIAL
+	default n
+	help
+	  Enable the UART transport adapter for the communication router.
+
+if UART_TRANSPORT
+
+choice UART_TRANSPORT_BACKEND
+	prompt "UART transport backend"
+	default UART_TRANSPORT_STM32 if SOC_FAMILY_STM32 && SERIAL_SUPPORT_ASYNC
+	default UART_TRANSPORT_GENERIC
+
+config UART_TRANSPORT_GENERIC
+	bool "Zephyr interrupt-driven UART"
+	depends on SERIAL_SUPPORT_INTERRUPT
+	select UART_INTERRUPT_DRIVEN
+	select UART_TRANSPORT_GENERIC_API
+
+config UART_TRANSPORT_STM32
+	bool "STM32 Zephyr asynchronous UART"
+	depends on SOC_FAMILY_STM32 && SERIAL_SUPPORT_ASYNC
+	select UART_ASYNC_API
+	select UART_TRANSPORT_STM32_API
+
+endchoice
+
+config UART_TRANSPORT_GENERIC_API
+	bool
+
+config UART_TRANSPORT_GENERIC_RX_QUEUE_DEPTH
+	int "Generic UART RX queue depth"
+	depends on UART_TRANSPORT_GENERIC
+	range 1 16
+	default 4
+
+config UART_TRANSPORT_GENERIC_TX_TIMEOUT_MS
+	int "Generic UART TX timeout"
+	depends on UART_TRANSPORT_GENERIC
+	range 1 10000
+	default 1000
+
+config UART_TRANSPORT_STM32_API
+	bool
+
+config UART_TRANSPORT_STM32_RX_BUFFER_SIZE
+	int "STM32 UART DMA RX buffer size"
+	depends on UART_TRANSPORT_STM32
+	range 32 4096
+	default 256
+
+config UART_TRANSPORT_STM32_RX_QUEUE_DEPTH
+	int "STM32 UART RX queue depth"
+	depends on UART_TRANSPORT_STM32
+	range 1 16
+	default 4
+
+config UART_TRANSPORT_STM32_RX_TIMEOUT_US
+	int "STM32 UART RX inactivity timeout in microseconds"
+	depends on UART_TRANSPORT_STM32
+	range 1 1000000
+	default 1000
+
+config UART_TRANSPORT_STM32_TX_TIMEOUT_MS
+	int "STM32 UART blocking TX timeout"
+	depends on UART_TRANSPORT_STM32
+	range 1 10000
+	default 100
+
+endif

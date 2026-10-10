@@ -1,42 +1,6 @@
 source "Kconfig.zephyr"
 
-menu "BLDC speed controller"
-
-config APP_SPEED_PID_KP_UA_PER_RPM
-	int "Speed PID proportional gain (uA/RPM)"
-	default 12000
-	range 0 1000000
-	help
-	  Proportional gain for the speed PID. The default is 0.01 A/RPM.
-
-config APP_SPEED_PID_KI_UA_PER_RPM
-	int "Speed PID integral gain (uA/RPM per sample)"
-	default 1000
-	range 0 1000000
-	help
-	  Integral gain for the speed PID. Keep at zero until the controller has
-	  been tuned and verified on current-limited hardware.
-
-config APP_SPEED_PID_KD_UA_PER_RPM
-	int "Speed PID derivative gain (uA/RPM per sample difference)"
-	default 0
-	range 0 1000000
-	help
-	  Derivative gain for the speed PID's discrete error samples.
-
-config APP_SPEED_CURRENT_LIMIT_MA
-	int "Speed controller current limit (mA)"
-	default 250
-	range 1 250
-	help
-	  Maximum magnitude of the q-axis current reference. This application
-	  intentionally caps the configured limit at 250 mA.
-
-config APP_SPEED_LOOP_PERIOD_MS
-	int "Speed controller period (ms)"
-	default 10
-	range 1 100
-	help
-	  Fixed period between position PID updates.
-
-endmenu
+rsource "lib/commander/Kconfig"
+rsource "lib/telemetry/Kconfig"
+rsource "lib/comm_router/Kconfig"
+rsource "lib/uart_transport/Kconfig"

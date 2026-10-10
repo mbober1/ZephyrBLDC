@@ -1,0 +1,17 @@
+config COMMANDER
+	bool "Commander library"
+	default n
+	select COMM_ROUTER
+	help
+	  Enable the commander library.
+
+if COMMANDER
+
+config COMMANDER_EVENT_QUEUE_SIZE
+	int "Commander event queue size"
+	range 1 10
+	default 3
+	help
+	  Maximum number of pending command and acknowledgement events.
+
+endif
