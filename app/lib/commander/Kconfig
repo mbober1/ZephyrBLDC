@@ -1,6 +1,7 @@
 config COMMANDER
 	bool "Commander library"
 	default n
+	depends on FPU
 	select COMM_ROUTER
 	help
 	  Enable the commander library.

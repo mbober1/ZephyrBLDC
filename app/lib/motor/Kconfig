@@ -1,0 +1,40 @@
+config MOTOR_THREAD_PRIORITY
+	int "Motor thread priority"
+	default -5
+	help
+		Priority used for the motor control thread.
+
+config MOTOR_THREAD_STACK_SIZE
+	int "Motor thread stack size"
+	default 1024
+	help
+		Stack size used by the motor control thread.
+
+config MOTOR_LOOP_PERIOD_US
+	int "Motor loop period in microseconds"
+	default 1000
+	help
+		Period used by the motor control loop.
+
+choice MOTOR_ARITHMETIC_IMPLEMENTATION
+	prompt "Arithmetic implementation"
+	default MOTOR_ARITHMETIC_CORDIC if SOC_SERIES_STM32G4X
+	default MOTOR_ARITHMETIC_CMSIS_DSP if ARM
+	default MOTOR_ARITHMETIC_SOFTWARE
+	help
+		Select the arithmetic implementation used by the motor control loop.
+
+config MOTOR_ARITHMETIC_CORDIC
+	bool "STM32G4 CORDIC"
+	depends on SOC_SERIES_STM32G4X
+
+config MOTOR_ARITHMETIC_CMSIS_DSP
+	bool "CMSIS-DSP"
+	depends on ARM
+	select CMSIS_DSP
+	select CMSIS_DSP_CONTROLLER
+
+config MOTOR_ARITHMETIC_SOFTWARE
+	bool "Software"
+
+endchoice
