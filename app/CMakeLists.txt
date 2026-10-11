@@ -9,7 +9,17 @@ target_sources(app PRIVATE src/main.c)
 
 if(CONFIG_COMMANDER)
 	add_subdirectory(lib/commander)
+	add_dependencies(commander zephyr_generated_headers)
 	target_link_libraries(app PRIVATE commander)
+endif()
+
+if(CONFIG_DT_HAS_ST_STM32_SVPWM_ENABLED)
+	add_subdirectory(lib/motor)
+	add_dependencies(motor zephyr_generated_headers)
+	target_link_libraries(app PRIVATE motor)
+	if(CONFIG_COMMANDER)
+		target_link_libraries(motor PRIVATE commander)
+	endif()
 endif()
 
 if(CONFIG_COMM_ROUTER)
