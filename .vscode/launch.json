@@ -23,7 +23,7 @@
       "request": "launch",
       "program": "${workspaceFolder}/build/zephyr/zephyr.exe",
       "args": [],
-      "stopAtEntry": true,
+      "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
       "externalConsole": false,

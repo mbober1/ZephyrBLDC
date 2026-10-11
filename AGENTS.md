@@ -16,6 +16,10 @@ Use vscode tasks.
 - `Build devboard` for the WeAct STM32G431 Core Board target.
 - `Build MicroSpora` for the MicroSpora target.
 
+## Debugging
+
+For debugging purposes, you can connect to the target using `west attach` command. It will attach GDB to the running target, but not reset or flash it. Remember to exit gdb when finished.
+
 ## Guidelines
 - Use built-in VSCode tasks for building the firmware.
 - Do not use grep, sed, awk, or other command-line tools. Use only built-in tools.

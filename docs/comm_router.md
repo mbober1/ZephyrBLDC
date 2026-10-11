@@ -119,10 +119,10 @@ Commander registers message ID `0x0100` for operator commands. Its payload is ex
 | Offset | Size | Field |
 | ---: | ---: | --- |
 | 0 | 1 byte | Mode: `0` off, `1` voltage, `2` torque, `3` speed, `4` position, `5` calibration |
-| 1 | 4 bytes | Signed Q31 normalized mechanical speed, little-endian |
+| 1 | 4 bytes | IEEE-754 `float32` mechanical speed in RPM, little-endian |
 | 5 | 2 bytes | Signed current value, little-endian; units and meaning are not defined yet |
 
-The setpoint uses a signed 1.31 fixed-point representation of mechanical revolutions per second;
+The setpoint uses a little-endian IEEE-754 `float32` representation in RPM;
 the current value uses 16-bit two's-complement. Setpoint
 interpretation depends on the selected mode. Commander
 acknowledges commands using message ID `0x0101` with a one-byte

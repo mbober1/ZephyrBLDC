@@ -12,6 +12,7 @@
 				"-b", "microspora",
 				"${workspaceFolder}/app",
 				"-DBOARD_ROOT=${workspaceFolder}",
+				"-DDTC_OVERLAY_FILE=${workspaceFolder}/app/boards/microspora.overlay",
 			],
 			"problemMatcher": [
 				"$gcc"
@@ -70,6 +71,63 @@
 				"-p", "native_sim",
 				"-v"
 			],
+		},
+		{
+			"label": "Build native for clang-tidy",
+			"type": "shell",
+			"group": "build",
+			"command": "west",
+			"args": [
+				"build",
+				"-p", "auto",
+				"-b", "native_sim",
+				"${workspaceFolder}/app",
+				"-d", "${workspaceFolder}/build/native_sim-clang-tidy",
+				"-DBOARD_ROOT=${workspaceFolder}",
+				"-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+			],
+			"problemMatcher": [
+				"$gcc"
+			]
+		},
+		{
+			"label": "clang-tidy native",
+			"type": "shell",
+			"dependsOn": "Build native for clang-tidy",
+			"command": "python3",
+			"args": [
+				"${workspaceFolder}/scripts/run_clang_tidy.py",
+				"${workspaceFolder}/build/native_sim-clang-tidy"
+			]
+		},
+		{
+			"label": "Build MicroSpora for clang-tidy",
+			"type": "shell",
+			"group": "build",
+			"command": "west",
+			"args": [
+				"build",
+				"-p", "auto",
+				"-b", "microspora",
+				"${workspaceFolder}/app",
+				"-d", "${workspaceFolder}/build/microspora-clang-tidy",
+				"-DBOARD_ROOT=${workspaceFolder}",
+				"-DDTC_OVERLAY_FILE=${workspaceFolder}/app/boards/microspora.overlay",
+				"-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+			],
+			"problemMatcher": [
+				"$gcc"
+			]
+		},
+		{
+			"label": "clang-tidy MicroSpora",
+			"type": "shell",
+			"dependsOn": "Build MicroSpora for clang-tidy",
+			"command": "python3",
+			"args": [
+				"${workspaceFolder}/scripts/run_clang_tidy.py",
+				"${workspaceFolder}/build/microspora-clang-tidy"
+			]
 		}
 	]
 }

@@ -58,6 +58,7 @@ RUN apt-get -y update && \
 	apt-get --no-install-recommends -y install \
 		build-essential \
 		ca-certificates \
+		clang-tidy \
 		debhelper \
 		gdb \
 		libfontconfig1 \

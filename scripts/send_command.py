@@ -18,9 +18,6 @@ ACK_MESSAGE_ID = 0x0101
 HEADER_SIZE = 6
 CRC_SIZE = 2
 MAX_PAYLOAD_SIZE = 1024
-Q31_SCALE = 1 << 31
-Q31_MAX = (1 << 31) - 1
-Q31_FULL_SCALE_RPM = 1000.0
 
 MODES = {
 	"off": 0,
@@ -170,18 +167,14 @@ def main():
 	parser.add_argument("--baud", type=int, default=115200, help="serial baud rate (default: %(default)s)")
 	parser.add_argument("--mode", choices=MODES, required=True)
 	parser.add_argument("--setpoint", type=parse_rpm, required=True,
-			    help="mechanical speed in RPM; converted to Q31")
+			    help="mechanical speed in RPM")
 	parser.add_argument("--current", type=parse_signed_16, required=True,
 			    help="opaque signed current field")
 	parser.add_argument("--timeout", type=positive_float, default=2.0,
 			    help="write and acknowledgment timeout in seconds (default: %(default)s)")
 	args = parser.parse_args()
 
-	setpoint_q31 = round(args.setpoint / Q31_FULL_SCALE_RPM * Q31_SCALE)
-	if setpoint_q31 < -Q31_SCALE or setpoint_q31 > Q31_MAX:
-		parser.error("converted setpoint must be in the Q31 range [-1, 1)")
-
-	payload = struct.pack("<Bih", MODES[args.mode], setpoint_q31, args.current)
+	payload = struct.pack("<Bfh", MODES[args.mode], args.setpoint, args.current)
 	frame = encode_frame(COMMAND_MESSAGE_ID, payload)
 	fd = os.open(args.port, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
 	original_settings = termios.tcgetattr(fd)

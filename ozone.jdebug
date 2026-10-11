@@ -32,8 +32,9 @@ void OnProjectLoad (void) {
   //
   // User settings
   //
-  File.Open ("$(ProjectDir)/build/zephyr/zephyr.elf");
   Edit.SysVar (VAR_HSS_SPEED, 1000000);
+  Project.SetOSPlugin ("ZephyrPlugin");
+  File.Open ("$(ProjectDir)/build/zephyr/zephyr.elf");
 }
 
 /*********************************************************************

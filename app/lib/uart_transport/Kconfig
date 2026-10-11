@@ -22,8 +22,7 @@ config UART_TRANSPORT_GENERIC
 
 config UART_TRANSPORT_STM32
 	bool "STM32 Zephyr asynchronous UART"
-	depends on SOC_FAMILY_STM32 && SERIAL_SUPPORT_ASYNC
-	select UART_ASYNC_API
+	depends on SOC_FAMILY_STM32
 	select UART_TRANSPORT_STM32_API
 
 endchoice

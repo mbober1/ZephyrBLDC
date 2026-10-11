@@ -41,13 +41,7 @@
 		led0 = &red_led;
 		mcuboot-led0 = &red_led;
 		sw0 = &user_button;
-		adc0 = &adc1;
 		watchdog0 = &iwdg;
-		encoder0 = &mt6701;
-		motor0 = &svpwm;
-		driver0 = &drv8316;
-		currsmp0 = &currsmp;
-		comm = &usart3;
 	};
 };
 
@@ -85,104 +79,6 @@
 };
 
 
-&spi1 {
-	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6>;
-	pinctrl-names = "default";
-	cs-gpios = <&gpioa 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-	status = "okay";
-
-	mt6701: mt6701@0 {
-		compatible = "novosense,mt6701";
-		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(15)>;
-		status = "okay";
-	};
-};
-
-/ {
-	feedback: feedback {
-		compatible = "spinner,mt6701-feedback";
-		sensor = <&mt6701>;
-		pole-pairs = <11>;
-		phase-offset-degrees = <278>;
-		sampling-period-ms = <3>;
-		status = "okay";
-	};
-};
-
-&spi3 {
-	pinctrl-0 = <&spi3_sck_pb3 &spi3_miso_pb4 &spi3_mosi_pb5>;
-	pinctrl-names = "default";
-	cs-gpios = <&gpioc 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-	status = "okay";
-
-	drv8316: drv8316@0 {
-		compatible = "ti,drv83xx";
-		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(40)>;
-		enable-gpios = <&gpiob 7 0>;
-		pwm-mode = <0>;
-		slew-rate = <3>;
-		sdo-mode = <1>;
-		csa-gain = <3>;
-		pwm-100-duty-frequency = <0>;
-		ocp-mode = <0>;
-		ocp-level = <0>;
-		ocp-retry = <0>;
-		ocp-deglitch = <0>;
-		recirculation-mode = <0>;
-		buck-voltage = <0>;
-		buck-current-limit = <0>;
-		delay-target = <0>;
-		overvoltage-level = <0>;
-		overtemperature-report;
-		spi-fault-report;
-		ocp-cycle-by-cycle;
-		buck-enable;
-		buck-power-sequencing;
-		delay-compensation;
-		status = "okay";
-	};
-};
-
-#include <dts-bindings/adc/stm32g4xx.h>
-&adc1 {
-	currsmp: currsmp {
-		status = "okay";
-		compatible = "st,stm32-currsmp-shunt";
-		pinctrl-0 = <&adc1_in1_pa0 &adc1_in2_pa1 &adc1_in3_pa2>;
-		pinctrl-names = "default";
-
-		adc-resolution = <12>;
-		adc-tsample = <13>;
-		adc-oversampling = <2>;
-		adc-channels = <3 2 1>;
-		adc-trigger = <STM32_ADC12_INJ_TRIG_TIM1_TRGO>;
-	};
-};
-
-&timers1 {
-	status = "okay";
-
-	svpwm: svpwm {
-		status = "okay";
-		compatible = "st,stm32-svpwm";
-		currsmp = <&currsmp>;
-		drv8316 = <&drv8316>;
-		pinctrl-0 = <&tim1_ch1_pa8 &tim1_ch2_pa9 &tim1_ch3_pa10 &tim1_ch1n_pb13 &tim1_ch2n_pb14 &tim1_ch3n_pb15 &tim1_bkin2_pa11>;
-		pinctrl-names = "default";
-		driver {
-			compatible = "ti,drv8316c";
-			enable-comp-outputs;
-		};
-	};
-};
-
-
-&vref {
-	status = "okay";
-};
-
 stm32_lp_tick_source: &lptim1 {
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
@@ -195,15 +91,3 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 };
 
-/*
-&iwdg {
-	status = "okay";
-};
-*/
-
-&usart3 {
-	pinctrl-0 = <&usart3_tx_pc10 &usart3_rx_pc11>;
-	pinctrl-names = "default";
-	current-speed = <115200>;
-	status = "okay";
-};
