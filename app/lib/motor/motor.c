@@ -14,7 +14,7 @@
 #include "commander.h"
 #endif
 
-#define POLE_PAIRS ((float)DT_PROP(DT_NODELABEL(feedback), pole_pairs))
+#define POLE_PAIRS ((float)DT_PROP(DT_NODELABEL(motor), pole_pairs))
 #define RPM_TO_REVOLUTIONS_PER_SECOND (1.0f / 60.0f)
 
 static const struct device *const motor_currsmp = DEVICE_DT_GET(DT_NODELABEL(currsmp));
@@ -71,7 +71,7 @@ void motor_loop(void *p1, void *p2, void *p3)
 		}
 
 		svpwm_set_phase_voltages(motor_svpwm, cos, sin);
-		angle = feedback_get_eangle(motor_feedback);
+		angle = feedback_get_angle(motor_feedback);
 		speed = feedback_get_speed(motor_feedback);
 		next_wakeup_ticks += K_USEC(CONFIG_MOTOR_LOOP_PERIOD_US).ticks;
 		k_sleep(K_TIMEOUT_ABS_TICKS(next_wakeup_ticks));

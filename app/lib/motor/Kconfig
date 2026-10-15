@@ -16,6 +16,12 @@ config MOTOR_LOOP_PERIOD_US
 	help
 		Period used by the motor control loop.
 
+config MOTOR_CALIBRATION
+	bool "Build motor calibration library"
+	default n
+	help
+		Compile and link the motor calibration helpers.
+
 choice MOTOR_ARITHMETIC_IMPLEMENTATION
 	prompt "Arithmetic implementation"
 	default MOTOR_ARITHMETIC_CORDIC if SOC_SERIES_STM32G4X

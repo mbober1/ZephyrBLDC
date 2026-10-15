@@ -13,7 +13,7 @@ UART_TRANSPORT_DEFINE(comm_uart_transport, &uart_transport_backend_api, DEVICE_D
 K_THREAD_DEFINE(telemetry_thread, CONFIG_TELEMETRY_THREAD_STACK_SIZE, telemetry_loop, NULL, NULL, NULL, CONFIG_TELEMETRY_THREAD_PRIORITY, 0, 0);
 #endif
 
-#if defined(CONFIG_DT_HAS_ST_STM32_SVPWM_ENABLED)
+#if defined(CONFIG_BLDC)
 #include <motor.h>
 K_THREAD_DEFINE(motor_thread, CONFIG_MOTOR_THREAD_STACK_SIZE, motor_loop, NULL, NULL, NULL, CONFIG_MOTOR_THREAD_PRIORITY, 0, 0);
 #endif

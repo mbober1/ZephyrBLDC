@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${env:ZEPHYR_BASE}/include"
+                "${env:ZEPHYR_BASE}/include",
+                "${env:ZEPHYR_BASE}"
             ],
             "defines": [],
             "compilerPath": "${env:ZEPHYR_SDK}/gnu/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc",

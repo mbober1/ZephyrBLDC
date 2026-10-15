@@ -1,0 +1,178 @@
+#include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys_clock.h>
+
+#include <spinner/drivers/currsmp.h>
+#include <spinner/drivers/feedback.h>
+#include <spinner/drivers/svpwm.h>
+
+#include "arithmetic.h"
+#include "calibration.h"
+
+LOG_MODULE_REGISTER(calibration, LOG_LEVEL_INF);
+
+#define MOTOR_STEP_PERIOD_MS              (2)
+#define MOTOR_STEP_DEGREES                (3.0f)
+#define CALIBRATION_VOLTAGE               (0.3f)
+#define CALIBRATION_TWO_PI_F              (6.28318530717958647692f)
+#define MOTOR_STEP_RADIANS                (MOTOR_STEP_DEGREES * CALIBRATION_TWO_PI_F / 360.0f)
+#define CALIBRATION_SETTLE_MS             (1000)
+#define CALIBRATION_POSITION_SAMPLES      (20)
+#define CALIBRATION_OFFSET_STEPS_PER_REV  (20)
+#define CALIBRATION_OFFSET_STEP_RADIANS   (CALIBRATION_TWO_PI_F / CALIBRATION_OFFSET_STEPS_PER_REV)
+#define CALIBRATION_OFFSET_SAMPLES        (4)
+#define CALIBRATION_OFFSET_SETTLE_MS      (20)
+
+float get_position(const struct device *const feedback, const size_t samples) {
+  float position = 0.0f;
+
+  if (samples == 0) {
+    return NAN;
+  }
+
+  for (size_t i = 0; i < samples; ++i) {
+    k_msleep(CONFIG_SPINNER_FEEDBACK_RTIO_SAMPLE_PERIOD_MS);
+    position += feedback_get_position(feedback);
+  }
+
+  return position / (float)samples;
+}
+
+void simple_move(const struct device *const motor, const size_t steps) {
+  float sine;
+  float cosine;
+  float angle = 0.0f;
+  const float step = MOTOR_STEP_RADIANS;
+
+  for (size_t i = 0; i < steps; ++i) {
+    angle += step;
+    if (angle >= CALIBRATION_TWO_PI_F) {
+      angle -= CALIBRATION_TWO_PI_F;
+    }
+
+    arithmetic_sin_cos(angle, &sine, &cosine);
+
+    svpwm_set_phase_voltages(motor, CALIBRATION_VOLTAGE * cosine,
+                             CALIBRATION_VOLTAGE * sine);
+    k_msleep(MOTOR_STEP_PERIOD_MS);
+  }
+}
+
+void energize_motor(const struct device *const motor) {
+  svpwm_set_phase_voltages(motor, CALIBRATION_VOLTAGE, 0.0f);
+}
+
+void deenergize_motor(const struct device *const motor) {
+  svpwm_set_phase_voltages(motor, 0.0f, 0.0f);
+}
+
+static float wrap_degrees(float degrees) {
+  degrees -= 360.0f * (float)(int32_t)(degrees / 360.0f);
+  if (degrees < 0.0f) {
+    degrees += 360.0f;
+  }
+
+  return degrees;
+}
+
+/* Returns signed pole pairs; a negative value means the encoder runs reversed. */
+float measure_pole_pairs(const struct device *const motor,
+                         const struct device *const feedback,
+                         const size_t steps) {
+  float start;
+  float end;
+
+  energize_motor(motor);
+  k_msleep(CALIBRATION_SETTLE_MS);
+  start = get_position(feedback, CALIBRATION_POSITION_SAMPLES);
+
+  simple_move(motor, steps);
+  k_msleep(CALIBRATION_SETTLE_MS);
+  end = get_position(feedback, CALIBRATION_POSITION_SAMPLES);
+  deenergize_motor(motor);
+
+  if (end == start) {
+    return NAN;
+  }
+
+  return ((float)steps * MOTOR_STEP_DEGREES) / (end - start);
+}
+
+float measure_phase_offset(const struct device *const motor,
+                           const struct device *const feedback,
+                           const int pole_pairs) {
+  const size_t steps = (size_t)pole_pairs * CALIBRATION_OFFSET_STEPS_PER_REV;
+  float sine;
+  float cosine;
+  float angle = 0.0f;
+  float sum_sin = 0.0f;
+  float sum_cos = 0.0f;
+
+  if (pole_pairs <= 0) {
+    return NAN;
+  }
+
+  energize_motor(motor);
+  k_msleep(CALIBRATION_SETTLE_MS);
+
+  for (size_t i = 0; i < steps; ++i) {
+    angle += CALIBRATION_OFFSET_STEP_RADIANS;
+    if (angle >= CALIBRATION_TWO_PI_F) {
+      angle -= CALIBRATION_TWO_PI_F;
+    }
+
+    arithmetic_sin_cos(angle, &sine, &cosine);
+    svpwm_set_phase_voltages(motor, CALIBRATION_VOLTAGE * cosine,
+                             CALIBRATION_VOLTAGE * sine);
+    k_msleep(CALIBRATION_OFFSET_SETTLE_MS);
+
+    const float position = get_position(feedback, CALIBRATION_OFFSET_SAMPLES);
+    const float rotor_rad = (float)pole_pairs * position * CALIBRATION_TWO_PI_F / 360.0f;
+    sum_sin += sinf(angle - rotor_rad);
+    sum_cos += cosf(angle - rotor_rad);
+  }
+
+  deenergize_motor(motor);
+
+  const float mean_rad = atan2f(sum_sin, sum_cos);
+  const float mean_deg = mean_rad * 360.0f / CALIBRATION_TWO_PI_F;
+
+  return wrap_degrees(mean_deg);
+}
+
+float measure_phase_resistance(const struct device *const motor,
+                               const struct device *const currsmp,
+                               const float bus_voltage,
+                               const size_t samples) {
+  struct currsmp_curr curr;
+  float current = 0.0f;
+
+  if (samples == 0 || currsmp == NULL) {
+    return NAN;
+  }
+
+  energize_motor(motor);
+  k_msleep(CALIBRATION_SETTLE_MS);
+
+  for (size_t i = 0; i < samples; ++i) {
+    currsmp_get_currents(currsmp, &curr);
+    current += curr.i_a;
+    k_msleep(1);
+  }
+
+  deenergize_motor(motor);
+
+  current = fabsf(current / (float)samples);
+  LOG_INF("Average current: %.4f A", current);
+  if (current == 0.0f) {
+    return NAN;
+  }
+
+  return CALIBRATION_VOLTAGE * bus_voltage / current;
+}

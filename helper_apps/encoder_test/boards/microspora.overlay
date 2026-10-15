@@ -1,0 +1,41 @@
+/ {
+	chosen {
+		zephyr,console = &usart3;
+	};
+
+	aliases {
+		encoder0 = &mt6701;
+	};
+};
+
+&spi1 {
+	dmas = <&dmamux1 0 11 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+	       <&dmamux1 1 10 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+
+	mt6701: mt6701@0 {
+		compatible = "novosense,mt6701";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(15)>;
+		status = "okay";
+	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pc10 &usart3_rx_pc11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};

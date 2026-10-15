@@ -9,16 +9,22 @@
 	};
 
 	feedback: feedback {
-		compatible = "spinner,mt6701-feedback";
+		compatible = "spinner,rtio-feedback";
 		sensor = <&mt6701>;
+		status = "okay";
+	};
+
+	motor: motor {
+		compatible = "spinner,motor";
 		pole-pairs = <11>;
 		phase-offset-degrees = <278>;
-		sampling-period-ms = <10>;
-		status = "okay";
 	};
 };
 
 &spi1 {
+	dmas = <&dmamux1 0 11 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+	       <&dmamux1 1 10 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpioa 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -32,7 +38,18 @@
 	};
 };
 
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
 &spi3 {
+	dmas = <&dmamux1 2 15 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+	       <&dmamux1 3 14 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
 	pinctrl-0 = <&spi3_sck_pb3 &spi3_miso_pb4 &spi3_mosi_pb5>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpioc 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -80,6 +97,8 @@
 		adc-oversampling = <2>;
 		adc-channels = <3 2 1>;
 		adc-trigger = <STM32_ADC12_INJ_TRIG_TIM1_TRGO>;
+		csa-gain-mv-per-a = <1200>;
+		filter-cutoff-hz = <1000>;
 	};
 };
 

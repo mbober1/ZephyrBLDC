@@ -14,11 +14,11 @@ const struct device *currsmp = DEVICE_DT_GET(DT_NODELABEL(currsmp));
 const struct device *feedback = DEVICE_DT_GET(DT_NODELABEL(feedback));
 struct currsmp_curr curr;
 static volatile float measured_rpm;
-static volatile float eangle;
+static volatile float angle;
 
 static void noop_regulation_callback(void *ctx)
 {
-    eangle = feedback_get_eangle(feedback);
+    angle = feedback_get_angle(feedback);
 	measured_rpm = feedback_get_speed(feedback);
 	currsmp_get_currents(currsmp, &curr);
     (void)ctx;
