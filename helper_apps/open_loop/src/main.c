@@ -9,8 +9,8 @@
 #include "arithmetic.h"
 
 #define VOLTAGE_AMPLITUDE 0.3f
-#define TWO_PI_F 6.28318530717958647692f
-#define ANGLE_STEP_RADIANS (5 * 3.14159265358979323846f / 180.0f)
+#define FULL_TURN_DEG 360.0f
+#define ANGLE_STEP_DEGREES 5.0f
 #define STEP_PERIOD_MS 1
 
 const struct device *currsmp = DEVICE_DT_GET(DT_NODELABEL(currsmp));
@@ -52,9 +52,9 @@ int main(void)
     svpwm_set_phase_voltages(svpwm, VOLTAGE_AMPLITUDE * cosine, 
                                     VOLTAGE_AMPLITUDE * sine);
 
-    angle += ANGLE_STEP_RADIANS;
-    if (angle >= TWO_PI_F) {
-      angle -= TWO_PI_F;
+    angle += ANGLE_STEP_DEGREES;
+    if (angle >= FULL_TURN_DEG) {
+      angle -= FULL_TURN_DEG;
     }
 
     k_msleep(STEP_PERIOD_MS);

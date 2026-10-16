@@ -20,15 +20,15 @@ LOG_MODULE_REGISTER(calibration, LOG_LEVEL_INF);
 #define MOTOR_STEP_PERIOD_MS              (2)
 #define MOTOR_STEP_DEGREES                (3.0f)
 #define CALIBRATION_VOLTAGE               (0.3f)
-#define CALIBRATION_TWO_PI_F              (6.28318530717958647692f)
-#define MOTOR_STEP_RADIANS                (MOTOR_STEP_DEGREES * CALIBRATION_TWO_PI_F / 360.0f)
+#define CALIBRATION_FULL_TURN_DEG         (360.0f)
 #define CALIBRATION_SETTLE_MS             (1000)
 #define CALIBRATION_POSITION_SAMPLES      (20)
 #define CALIBRATION_OFFSET_STEPS_PER_REV  (20)
-#define CALIBRATION_OFFSET_STEP_RADIANS   (CALIBRATION_TWO_PI_F / CALIBRATION_OFFSET_STEPS_PER_REV)
+#define CALIBRATION_OFFSET_STEP_DEGREES   (CALIBRATION_FULL_TURN_DEG / CALIBRATION_OFFSET_STEPS_PER_REV)
 #define CALIBRATION_OFFSET_SAMPLES        (4)
 #define CALIBRATION_OFFSET_SETTLE_MS      (20)
 #define CALIBRATION_MIN_CURRENT           (0.100f)
+#define RAD_TO_DEG                        (180.0f / 3.14159265358979323846f)
 
 float get_position(const struct device *const feedback, const size_t samples) {
   float position = 0.0f;
@@ -49,12 +49,12 @@ void simple_move(const struct device *const motor, const size_t steps) {
   float sine;
   float cosine;
   float angle = 0.0f;
-  const float step = MOTOR_STEP_RADIANS;
+  const float step = MOTOR_STEP_DEGREES;
 
   for (size_t i = 0; i < steps; ++i) {
     angle += step;
-    if (angle >= CALIBRATION_TWO_PI_F) {
-      angle -= CALIBRATION_TWO_PI_F;
+    if (angle >= CALIBRATION_FULL_TURN_DEG) {
+      angle -= CALIBRATION_FULL_TURN_DEG;
     }
 
     arithmetic_sin_cos(angle, &sine, &cosine);
@@ -111,7 +111,7 @@ static void offset_sweep(const struct device *const motor,
                          const int pole_pairs, const float direction,
                          float *const sum_sin, float *const sum_cos) {
   const size_t steps = (size_t)pole_pairs * CALIBRATION_OFFSET_STEPS_PER_REV;
-  const float step = direction * CALIBRATION_OFFSET_STEP_RADIANS;
+  const float step = direction * CALIBRATION_OFFSET_STEP_DEGREES;
   float sine;
   float cosine;
   float angle = 0.0f;
@@ -123,10 +123,10 @@ static void offset_sweep(const struct device *const motor,
 
   for (size_t i = 0; i < steps; ++i) {
     angle += step;
-    if (angle >= CALIBRATION_TWO_PI_F) {
-      angle -= CALIBRATION_TWO_PI_F;
+    if (angle >= CALIBRATION_FULL_TURN_DEG) {
+      angle -= CALIBRATION_FULL_TURN_DEG;
     } else if (angle < 0.0f) {
-      angle += CALIBRATION_TWO_PI_F;
+      angle += CALIBRATION_FULL_TURN_DEG;
     }
 
     arithmetic_sin_cos(angle, &sine, &cosine);
@@ -135,14 +135,15 @@ static void offset_sweep(const struct device *const motor,
     k_msleep(CALIBRATION_OFFSET_SETTLE_MS);
 
     const float position = get_position(feedback, CALIBRATION_OFFSET_SAMPLES);
-    const float rotor_rad = (float)pole_pairs * position * CALIBRATION_TWO_PI_F / 360.0f;
-    *sum_sin += sinf(angle - rotor_rad);
-    *sum_cos += cosf(angle - rotor_rad);
+    const float rotor_deg = (float)pole_pairs * position;
+    arithmetic_sin_cos(wrap_degrees(angle - rotor_deg), &sine, &cosine);
+    *sum_sin += sine;
+    *sum_cos += cosine;
   }
 }
 
 static float sums_to_degrees(const float sum_sin, const float sum_cos) {
-  return wrap_degrees(atan2f(sum_sin, sum_cos) * 360.0f / CALIBRATION_TWO_PI_F);
+  return wrap_degrees(atan2f(sum_sin, sum_cos) * RAD_TO_DEG);
 }
 
 float measure_phase_offset(const struct device *const motor,
@@ -184,9 +185,12 @@ static float measure_phase_current(const struct device *const motor,
                                    const size_t samples) {
   struct currsmp_curr curr;
   float current = 0.0f;
+  float sine;
+  float cosine;
 
-  svpwm_set_phase_voltages(motor, CALIBRATION_VOLTAGE * cosf(angle),
-                           CALIBRATION_VOLTAGE * sinf(angle));
+  arithmetic_sin_cos(angle, &sine, &cosine);
+  svpwm_set_phase_voltages(motor, CALIBRATION_VOLTAGE * cosine,
+                           CALIBRATION_VOLTAGE * sine);
   k_msleep(CALIBRATION_SETTLE_MS);
 
   for (size_t i = 0; i < samples; ++i) {
@@ -211,7 +215,7 @@ float measure_phase_resistance(const struct device *const motor,
   }
 
   for (int phase = 0; phase < 3; ++phase) {
-    const float angle = (float)phase * CALIBRATION_TWO_PI_F / 3.0f;
+    const float angle = (float)phase * CALIBRATION_FULL_TURN_DEG / 3.0f;
     const float current = measure_phase_current(motor, currsmp, angle, phase, samples);
 
     LOG_INF("Phase %d average current: %.4f A", phase, (double)current);

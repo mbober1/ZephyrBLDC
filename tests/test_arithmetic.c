@@ -5,8 +5,6 @@
 
 #include "arithmetic.h"
 
-#define PI_F 3.14159265358979323846f
-#define HALF_PI_F (PI_F / 2.0f)
 #define FLOAT_TOLERANCE 0.001f
 
 #define ASSERT_FLOAT_NEAR(actual, expected) \
@@ -21,11 +19,11 @@ ZTEST(arithmetic, test_cardinal_angles)
 	ASSERT_FLOAT_NEAR(sine, 0.0f);
 	ASSERT_FLOAT_NEAR(cosine, 1.0f);
 
-	arithmetic_sin_cos(HALF_PI_F, &sine, &cosine);
+	arithmetic_sin_cos(90.0f, &sine, &cosine);
 	ASSERT_FLOAT_NEAR(sine, 1.0f);
 	ASSERT_FLOAT_NEAR(cosine, 0.0f);
 
-	arithmetic_sin_cos(PI_F, &sine, &cosine);
+	arithmetic_sin_cos(180.0f, &sine, &cosine);
 	ASSERT_FLOAT_NEAR(sine, 0.0f);
 	ASSERT_FLOAT_NEAR(cosine, -1.0f);
 }
@@ -35,11 +33,11 @@ ZTEST(arithmetic, test_negative_and_wrapped_angles)
 	float sine;
 	float cosine;
 
-	arithmetic_sin_cos(-HALF_PI_F, &sine, &cosine);
+	arithmetic_sin_cos(-90.0f, &sine, &cosine);
 	ASSERT_FLOAT_NEAR(sine, -1.0f);
 	ASSERT_FLOAT_NEAR(cosine, 0.0f);
 
-	arithmetic_sin_cos(5.0f * HALF_PI_F, &sine, &cosine);
+	arithmetic_sin_cos(450.0f, &sine, &cosine);
 	ASSERT_FLOAT_NEAR(sine, 1.0f);
 	ASSERT_FLOAT_NEAR(cosine, 0.0f);
 }

@@ -5,8 +5,8 @@
 
 #include "arithmetic.h"
 
-#define PI_F 3.14159265358979323846f
-#define TWO_PI_F (2.0f * PI_F)
+#define HALF_TURN_DEG 180.0f
+#define FULL_TURN_DEG 360.0f
 #define Q31_SCALE (UINT32_C(1) << 31)
 
 
@@ -29,13 +29,13 @@ SYS_INIT(arithmetic_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 void arithmetic_sin_cos(float angle, float *sin, float *cos)
 {
-	const float to_q31 = (float)INT32_MAX / PI_F;
+	const float to_q31 = (float)INT32_MAX / HALF_TURN_DEG;
 	const float to_float = 1.0f / (float)Q31_SCALE;
 
-	if (angle >= PI_F) {
-		angle -= TWO_PI_F;
-	} else if (angle < -PI_F) {
-		angle += TWO_PI_F;
+	if (angle >= HALF_TURN_DEG) {
+		angle -= FULL_TURN_DEG;
+	} else if (angle < -HALF_TURN_DEG) {
+		angle += FULL_TURN_DEG;
 	}
 
 	const int32_t cordic_angle = (int32_t)(angle * to_q31);
