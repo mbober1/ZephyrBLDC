@@ -1,17 +1,21 @@
+#include <math.h>
 #include <stdio.h>
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
+#include <zephyr/settings/settings.h>
 
 #include <spinner/drivers/currsmp.h>
 #include <spinner/drivers/svpwm.h>
 
+#include "calib_store.h"
 #include "calibration.h"
 
 #define BUS_VOLTAGE_V    (9.0f)
 #define RESISTANCE_SAMPLES (50)
 #define POLE_PAIR_STEPS (1000)
+#define POLE_PAIR_MAX (40)
 
 void calibration_regulation_cb(void *ctx) {}
 
@@ -26,6 +30,8 @@ int main(void)
 	int offset_int;
 	float resistance;
 	float inductance;
+	enum direction dir;
+	struct calib_data calib;
 
 	if (!device_is_ready(motor) || !device_is_ready(currsmp) ||
 	    !device_is_ready(feedback)) {
@@ -36,29 +42,70 @@ int main(void)
 	currsmp_configure(currsmp, calibration_regulation_cb, (void *)currsmp);
 	currsmp_start(currsmp);
 	svpwm_start(motor);
+	
+	resistance = measure_phase_resistance(motor, currsmp, BUS_VOLTAGE_V, RESISTANCE_SAMPLES);
+	if (resistance == NAN) {
+		printf("Phase resistance measurement failed\n");
+		return 0;
+	}
+	else
+	{
+		printf("phase resistance: %.4f ohm\n", (double)resistance);
+	}
 
 	pole_pairs = measure_pole_pairs(motor, feedback, POLE_PAIR_STEPS);
+	if (pole_pairs == NAN) {
+		printf("Pole pairs measurement failed\n");
+		return 0;
+	}
+	else if (pole_pairs < 0.0f) {
+		pole_pairs *= -1.0f;
+		dir = CLOCKWISE;
+	} else {
+		dir = COUNTERCLOCKWISE;
+	}
 	pole_pairs_int = (int)(pole_pairs + 0.5f);
-	printf("pole pairs: %d (%.3f)\n", pole_pairs_int, (double)pole_pairs);
 
-	offset = measure_phase_offset(motor, feedback, 11);
-	offset_int = (int)(offset + 0.5f);
-	printf("phase offset: %d (%.2f deg)\n", offset_int, (double)offset);
+	if (pole_pairs_int > POLE_PAIR_MAX) {
+		printf("Pole pairs measurement failed\n");
+		return 0;
+	}
+	else
+	{
+		printf("pole pairs: %d (%.3f)\n", pole_pairs_int, (double)pole_pairs);
+	}
 
-	resistance = measure_phase_resistance(motor, currsmp, BUS_VOLTAGE_V, RESISTANCE_SAMPLES);
-	printf("phase resistance: %.4f ohm\n", (double)resistance);
 
-	// inductance = measure_phase_inductance(motor, resistance, vbus);
+	offset = measure_phase_offset(motor, feedback, pole_pairs_int);
+	if (offset == NAN) {
+		printf("Phase offset measurement failed\n");
+		return 0;
+	}
+	else
+	{
+		offset_int = (int)(offset + 0.5f);
+		printf("phase offset: %d (%.2f deg)\n", offset_int, (double)offset);
+	}
 
-
-	// svpwm_set_phase_voltages(motor, 0.3f, 0);
-	// static volatile struct currsmp_curr curr;
-	// while (1) {
-  //   currsmp_get_currents(currsmp, &curr);
-	// }
 	deenergize_motor(motor);
 
-	// printf("phase inductance: %.6f H\n", (double)inductance);
+
+	if (settings_subsys_init() != 0) {
+		printf("Settings init failed\n");
+		return 0;
+	}
+
+	calib.resistance = resistance;
+	calib.pole_pairs = pole_pairs_int;
+	calib.phase_offset = offset_int;
+	calib.dir = dir;
+	if (calib_store_save(&calib) != 0) {
+		printf("Calibration save failed\n");
+	}
+	else {
+		printf("Calibration saved\n");
+	}
+
 
 	return 0;
 }
