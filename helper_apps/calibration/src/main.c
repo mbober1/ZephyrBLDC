@@ -9,7 +9,7 @@
 #include <spinner/drivers/currsmp.h>
 #include <spinner/drivers/svpwm.h>
 
-#include "calib_store.h"
+#include "motor_params.h"
 #include "calibration.h"
 
 #define BUS_VOLTAGE_V    (9.0f)
@@ -30,8 +30,8 @@ int main(void)
 	int offset_int;
 	float resistance;
 	float inductance;
-	enum direction dir;
-	struct calib_data calib;
+	enum motor_direction dir;
+	struct motor_params params;
 
 	if (!device_is_ready(motor) || !device_is_ready(currsmp) ||
 	    !device_is_ready(feedback)) {
@@ -44,7 +44,7 @@ int main(void)
 	svpwm_start(motor);
 	
 	resistance = measure_phase_resistance(motor, currsmp, BUS_VOLTAGE_V, RESISTANCE_SAMPLES);
-	if (resistance == NAN) {
+	if (isnan(resistance)) {
 		printf("Phase resistance measurement failed\n");
 		return 0;
 	}
@@ -54,15 +54,15 @@ int main(void)
 	}
 
 	pole_pairs = measure_pole_pairs(motor, feedback, POLE_PAIR_STEPS);
-	if (pole_pairs == NAN) {
+	if (isnan(pole_pairs)) {
 		printf("Pole pairs measurement failed\n");
 		return 0;
 	}
 	else if (pole_pairs < 0.0f) {
 		pole_pairs *= -1.0f;
-		dir = CLOCKWISE;
+		dir = MOTOR_DIR_CLOCKWISE;
 	} else {
-		dir = COUNTERCLOCKWISE;
+		dir = MOTOR_DIR_COUNTERCLOCKWISE;
 	}
 	pole_pairs_int = (int)(pole_pairs + 0.5f);
 
@@ -77,7 +77,7 @@ int main(void)
 
 
 	offset = measure_phase_offset(motor, feedback, pole_pairs_int);
-	if (offset == NAN) {
+	if (isnan(offset)) {
 		printf("Phase offset measurement failed\n");
 		return 0;
 	}
@@ -95,11 +95,10 @@ int main(void)
 		return 0;
 	}
 
-	calib.resistance = resistance;
-	calib.pole_pairs = pole_pairs_int;
-	calib.phase_offset = offset_int;
-	calib.dir = dir;
-	if (calib_store_save(&calib) != 0) {
+	params.pole_pairs = pole_pairs_int;
+	params.phase_offset_deg = offset_int;
+	params.dir = dir;
+	if (motor_params_save(&params) != 0) {
 		printf("Calibration save failed\n");
 	}
 	else {

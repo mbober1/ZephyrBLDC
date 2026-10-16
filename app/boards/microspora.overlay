@@ -1,9 +1,2 @@
 #include "../../boards/storage_partition.dtsi"
 #include "../../boards/microspora.dtsi"
-
-/ {
-	chosen {
-		zephyr,console = &usart3;
-	};
-
-};

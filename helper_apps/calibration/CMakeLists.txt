@@ -9,6 +9,7 @@ project(calibration_app)
 
 add_subdirectory(../../app/lib/motor/arithmetic arithmetic)
 add_subdirectory(../../app/lib/motor/calibration calibration)
+add_subdirectory(../../app/lib/motor/params motor_params)
 
-target_sources(app PRIVATE src/main.c src/calib_store.c)
-target_link_libraries(app PRIVATE calibration)
+target_sources(app PRIVATE src/main.c)
+target_link_libraries(app PRIVATE calibration motor_params)

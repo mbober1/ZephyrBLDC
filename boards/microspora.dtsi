@@ -13,12 +13,6 @@
 		sensor = <&mt6701>;
 		status = "okay";
 	};
-
-	motor: motor {
-		compatible = "spinner,motor";
-		pole-pairs = <11>;
-		phase-offset-degrees = <278>;
-	};
 };
 
 &spi1 {
@@ -98,7 +92,7 @@
 		adc-channels = <3 2 1>;
 		adc-trigger = <STM32_ADC12_INJ_TRIG_TIM1_TRGO>;
 		csa-gain-mv-per-a = <1200>;
-		filter-cutoff-hz = <1000>;
+		filter-cutoff-hz = <500>;
 	};
 };
 

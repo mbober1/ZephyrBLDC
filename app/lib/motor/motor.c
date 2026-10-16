@@ -2,19 +2,22 @@
 #include <zephyr/devicetree.h>
 #include <errno.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <spinner/drivers/currsmp.h>
 #include <spinner/drivers/feedback.h>
 #include <spinner/drivers/svpwm.h>
 
 #include "motor.h"
 #include "arithmetic.h"
+#include "motor_params.h"
 #include "voltage_control.h"
 
 #if defined(CONFIG_COMMANDER)
 #include "commander.h"
 #endif
 
-#define POLE_PAIRS ((float)DT_PROP(DT_NODELABEL(motor), pole_pairs))
+LOG_MODULE_REGISTER(motor, LOG_LEVEL_INF);
+
 #define RPM_TO_REVOLUTIONS_PER_SECOND (1.0f / 60.0f)
 
 static const struct device *const motor_currsmp = DEVICE_DT_GET(DT_NODELABEL(currsmp));
@@ -35,6 +38,7 @@ void motor_loop(void *p1, void *p2, void *p3)
 {
 	int64_t next_wakeup_ticks;
 	static float sin, cos;
+	struct motor_params params;
 
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
@@ -43,6 +47,11 @@ void motor_loop(void *p1, void *p2, void *p3)
 	__ASSERT(device_is_ready(motor_currsmp), "Motor current sampler is not ready");
 	__ASSERT(device_is_ready(motor_feedback), "Motor feedback device is not ready");
 	__ASSERT(device_is_ready(motor_svpwm), "Motor SVPWM device is not ready");
+
+	if (motor_params_load(&params) != 0) {
+		LOG_ERR("Failed to load motor parameters, run calibration");
+		return;
+	}
 
 	currsmp_configure(motor_currsmp, motor_regulation_callback, NULL);
 	currsmp_start(motor_currsmp);
@@ -58,7 +67,7 @@ void motor_loop(void *p1, void *p2, void *p3)
 		switch (command.mode) {
 		case COMMANDER_MODE_VOLTAGE:
 			motor_voltage_control(command.setpoint * RPM_TO_REVOLUTIONS_PER_SECOND *
-				POLE_PAIRS, &sin, &cos);
+				(float)params.pole_pairs, &sin, &cos);
 			break;
 
 
